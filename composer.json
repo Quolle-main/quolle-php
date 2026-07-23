@@ -1,0 +1,29 @@
+{
+    "name": "quolle/quolle-php",
+    "description": "Official PHP SDK for the Quolle email API",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["quolle", "email", "transactional", "smtp", "api"],
+    "homepage": "https://quolle.com",
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5 || ^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Quolle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Quolle\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
