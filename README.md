@@ -131,6 +131,7 @@ try {
     ]);
 } catch (QuolleException $e) {
     echo $e->statusCode;      // e.g. 402
+    echo $e->errorCode;       // e.g. "monthly_quota_exceeded" — branch on this
     echo $e->getMessage();    // e.g. "Monthly limit reached"
     print_r($e->data);        // extra fields, e.g. ['limit' => 3000]
 }

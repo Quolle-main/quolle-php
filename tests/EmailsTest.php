@@ -114,4 +114,30 @@ class EmailsTest extends TestCase
         $this->assertSame(3000, $e->data['limit']);
         $this->assertSame('Monthly limit reached', $e->getMessage());
     }
+
+    public function testEmptyMapsAreEncodedAsObjects(): void
+    {
+        $m = new \ReflectionMethod(Client::class, 'encode');
+        $m->setAccessible(true);
+        $json = $m->invoke(null, ['from' => 'a@b.co', 'variables' => [], 'metadata' => [],
+            'emails' => [['metadata' => []]]]);
+        $this->assertStringContainsString('"variables":{}', $json);
+        $this->assertStringContainsString('"metadata":{}', $json);
+        $this->assertStringNotContainsString('"metadata":[]', $json);
+    }
+
+    public function testUnencodableBodyThrowsInsteadOfSendingFalse(): void
+    {
+        $m = new \ReflectionMethod(Client::class, 'encode');
+        $m->setAccessible(true);
+        $this->expectException(QuolleException::class);
+        $m->invoke(null, ['subject' => "\xB1\x31"]);
+    }
+
+    public function testExceptionCarriesTheApiCode(): void
+    {
+        $e = new QuolleException('Warm-up cap reached', 429, [], 'warmup_limit_exceeded');
+        $this->assertSame('warmup_limit_exceeded', $e->errorCode);
+        $this->assertSame(429, $e->statusCode);
+    }
 }
