@@ -3,7 +3,13 @@
     "description": "Official PHP SDK for the Quolle email API",
     "type": "library",
     "license": "MIT",
-    "keywords": ["quolle", "email", "transactional", "smtp", "api"],
+    "keywords": [
+        "quolle",
+        "email",
+        "transactional",
+        "smtp",
+        "api"
+    ],
     "homepage": "https://quolle.com",
     "require": {
         "php": ">=7.4",
@@ -25,5 +31,10 @@
     },
     "config": {
         "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/Quolle-main/quolle-php",
+        "issues": "https://github.com/Quolle-main/quolle-php/issues",
+        "docs": "https://quolle.com/docs"
     }
 }

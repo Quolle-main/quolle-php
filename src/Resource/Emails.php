@@ -24,8 +24,13 @@ class Emails
      * Provide either `html` (with `subject`) or a `template` slug (with optional
      * `variables`). Pass `$idempotencyKey` to make retries safe.
      *
+     * `type` is "transactional" (the default) or "marketing". Marketing mail
+     * gets one-click unsubscribe headers and a footer link, and honours
+     * unsubscribes; transactional mail never does.
+     *
      * @param array<string,mixed> $params  from, to, subject, html, text, template,
-     *                                      variables, replyTo, scheduledAt, metadata
+     *                                      variables, replyTo, scheduledAt, metadata,
+     *                                      attachments, type
      * @return array<string,mixed> at least `id` and `message`
      * @throws \Quolle\QuolleException
      */

@@ -98,7 +98,7 @@ class Client
                 CURLOPT_TIMEOUT => $this->timeout,
             ]);
             if ($body !== null) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+                curl_setopt($ch, CURLOPT_POSTFIELDS, self::encode($body));
             }
 
             $response = curl_exec($ch);
@@ -120,14 +120,16 @@ class Client
             curl_close($ch);
 
             $decoded = $raw === '' ? [] : json_decode($raw, true);
+            $isJson = $raw === '' || is_array($decoded);
             if (!is_array($decoded)) {
                 $decoded = [];
             }
 
             if ($status < 200 || $status >= 300) {
                 $message = $decoded['error'] ?? "Request failed with status $status";
-                unset($decoded['error']);
-                $lastException = new QuolleException((string) $message, $status, $decoded);
+                $code = isset($decoded['code']) && is_string($decoded['code']) ? $decoded['code'] : null;
+                unset($decoded['error'], $decoded['code']);
+                $lastException = new QuolleException((string) $message, $status, $decoded, $code);
                 $retryable = $status === 429 || (($status >= 500 && $status <= 504) && ($idempotent || $hasIdem));
                 if ($attempt < $this->maxRetries && $retryable) {
                     $this->sleepBackoff($attempt, $this->retryAfter($rawHeaders));
@@ -136,10 +138,55 @@ class Client
                 throw $lastException;
             }
 
+            if (!$isJson) {
+                // A 2xx that isn't JSON (a proxy page, a truncated body) is an
+                // error, not an empty success.
+                throw new QuolleException(
+                    'Unexpected non-JSON response from the Quolle API',
+                    $status,
+                    ['body' => substr($raw, 0, 500)]
+                );
+            }
             return $decoded;
         }
 
         throw $lastException ?? new QuolleException('Request failed');
+    }
+
+    /** Fields the API expects as JSON objects, which PHP encodes `[]` when empty. */
+    private const OBJECT_FIELDS = ['variables', 'metadata'];
+
+    /**
+     * JSON-encode a request body. Empty maps go out as `{}` (an empty PHP array
+     * would encode as `[]`, which the API rejects), and an encoding failure
+     * (invalid UTF-8, say) raises instead of silently sending `false`.
+     *
+     * @param mixed $body
+     */
+    private static function encode($body): string
+    {
+        $normalise = static function (array $email): array {
+            foreach (self::OBJECT_FIELDS as $field) {
+                if (array_key_exists($field, $email) && $email[$field] === []) {
+                    $email[$field] = new \stdClass();
+                }
+            }
+            return $email;
+        };
+        if (is_array($body)) {
+            $body = $normalise($body);
+            if (isset($body['emails']) && is_array($body['emails'])) {
+                $body['emails'] = array_map(
+                    static fn ($e) => is_array($e) ? $normalise($e) : $e,
+                    $body['emails']
+                );
+            }
+        }
+        try {
+            return json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        } catch (\JsonException $e) {
+            throw new QuolleException('Could not encode the request as JSON: ' . $e->getMessage());
+        }
     }
 
     /** Parse a Retry-After header (seconds) from a raw header block. */

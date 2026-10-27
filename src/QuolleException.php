@@ -17,12 +17,20 @@ class QuolleException extends \Exception
     public array $data;
 
     /**
+     * @var string|null The API's stable, machine-readable error code (e.g.
+     *      "validation_error", "rate_limit_exceeded"). Branch on this, not on
+     *      the message. Null for transport-level failures.
+     */
+    public ?string $errorCode;
+
+    /**
      * @param array<string,mixed> $data
      */
-    public function __construct(string $message, ?int $statusCode = null, array $data = [])
+    public function __construct(string $message, ?int $statusCode = null, array $data = [], ?string $errorCode = null)
     {
         parent::__construct($message, $statusCode ?? 0);
         $this->statusCode = $statusCode;
         $this->data = $data;
+        $this->errorCode = $errorCode;
     }
 }
