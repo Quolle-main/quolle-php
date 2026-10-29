@@ -167,7 +167,7 @@ HMAC-SHA256 with a 5-minute timestamp window (replay protection).
 
 ## Automatic retries
 
-Transient failures — HTTP 429 (rate limit) and 5xx, plus network errors — are retried automatically with exponential backoff, honoring the `Retry-After` header. To avoid double-sending, a POST is only retried on a 5xx/network error when you pass an idempotency key; a 429 is always safe to retry (the request was never processed). Tune with `max_retries` in the options array (default 3).
+Transient failures — HTTP 429 (rate limit) and 5xx, plus network errors — are retried automatically with exponential backoff, honoring the `Retry-After` header. To avoid double-sending, a POST is only retried on a 5xx/network error when you pass an idempotency key; a 429 is always safe to retry (the request was never processed). Quota limits are the exception: `daily_quota_exceeded` and `warmup_limit_exceeded` (and any `Retry-After` over 60 seconds) are thrown immediately, because they reset at a fixed time, not in seconds; check `$e->errorCode` and queue the send for later. Tune with `max_retries` in the options array (default 3).
 
 ## License
 

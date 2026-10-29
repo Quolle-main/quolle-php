@@ -31,6 +31,16 @@ class Client
     private int $timeout;
     private int $maxRetries;
 
+    /**
+     * 429s that retrying can't fix: the limit resets at a fixed time (midnight
+     * UTC, the next billing period), not in seconds. Thrown at once so the
+     * caller can queue the send instead of blocking in a retry loop.
+     */
+    private const NO_RETRY_CODES = ['daily_quota_exceeded', 'warmup_limit_exceeded', 'monthly_quota_exceeded'];
+
+    /** A Retry-After longer than this means "not soon": throw instead of sleeping. */
+    private const MAX_RETRY_WAIT_SECONDS = 60;
+
     /** Email operations (send, sendBatch, get, cancel). */
     public Emails $emails;
 
@@ -130,9 +140,12 @@ class Client
                 $code = isset($decoded['code']) && is_string($decoded['code']) ? $decoded['code'] : null;
                 unset($decoded['error'], $decoded['code']);
                 $lastException = new QuolleException((string) $message, $status, $decoded, $code);
-                $retryable = $status === 429 || (($status >= 500 && $status <= 504) && ($idempotent || $hasIdem));
-                if ($attempt < $this->maxRetries && $retryable) {
-                    $this->sleepBackoff($attempt, $this->retryAfter($rawHeaders));
+                $retryable = ($status === 429 && !in_array($code, self::NO_RETRY_CODES, true))
+                    || (($status >= 500 && $status <= 504) && ($idempotent || $hasIdem));
+                $retryAfter = $this->retryAfter($rawHeaders);
+                $tooLong = $retryAfter !== null && $retryAfter > self::MAX_RETRY_WAIT_SECONDS;
+                if ($attempt < $this->maxRetries && $retryable && !$tooLong) {
+                    $this->sleepBackoff($attempt, $retryAfter);
                     continue;
                 }
                 throw $lastException;
