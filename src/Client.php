@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Quolle;
 
+use Quolle\Resource\ApiKeys;
+use Quolle\Resource\Domains;
 use Quolle\Resource\Emails;
 use Quolle\Resource\Webhooks;
 
@@ -23,7 +25,7 @@ use Quolle\Resource\Webhooks;
  */
 class Client
 {
-    public const VERSION = '1.1.0';
+    public const VERSION = '1.2.0';
     private const DEFAULT_BASE_URL = 'https://api.quolle.com';
 
     private string $apiKey;
@@ -44,8 +46,14 @@ class Client
     /** Email operations (send, sendBatch, get, cancel). */
     public Emails $emails;
 
-    /** Webhook signature verification. */
+    /** Webhook signature verification and endpoint management. */
     public Webhooks $webhooks;
+
+    /** Sending domains (needs a full-access key). */
+    public Domains $domains;
+
+    /** API keys (needs a full-access key). */
+    public ApiKeys $apiKeys;
 
     /**
      * @param string|null $apiKey  Your API key (starts with `qle_`). Falls back to the
@@ -65,7 +73,9 @@ class Client
         $this->timeout = $options['timeout'] ?? 30;
         $this->maxRetries = $options['max_retries'] ?? 3;
         $this->emails = new Emails($this);
-        $this->webhooks = new Webhooks();
+        $this->webhooks = new Webhooks($this);
+        $this->domains = new Domains($this);
+        $this->apiKeys = new ApiKeys($this);
     }
 
     /**
