@@ -8,7 +8,7 @@ Official PHP client for the [Quolle](https://quolle.com) email API.
 composer require quolle/quolle-php
 ```
 
-Requires PHP 7.4+ with the `curl` and `json` extensions.
+Requires PHP 8.1+ with the `curl` and `json` extensions.
 
 ## Quick start
 
