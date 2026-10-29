@@ -1,12 +1,19 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  # Weekly on ubuntu-latest, so a runner or toolchain change fails on a quiet
+  # Monday instead of on the next pull request.
+  schedule:
+    - cron: "17 6 * * 1"
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php: ["7.4", "8.1", "8.3"]
+        # The composer.json minimum, a middle release, and the newest.
+        php: ["8.1", "8.3", "latest"]
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
